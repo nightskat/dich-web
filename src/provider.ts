@@ -4,11 +4,10 @@ export function makeFetchProvider(providerName: string, apiKey: string): CorePro
   const config = getProviderConfig(providerName, apiKey);
 
   return {
-    async complete(prompt: string): Promise<string> {
+    async complete(prompt: string) {
       return callLLM(config, prompt);
     },
-
-    async translateWithBrief(segments, targetLang, readingNotes, _onProgress?, opts?) {
+    async translateWithBrief(segments, targetLang, readingNotes, _, opts) {
       if (!segments || segments.length === 0) return [];
 
       const chunks: string[][] = [];
@@ -24,7 +23,7 @@ export function makeFetchProvider(providerName: string, apiKey: string): CorePro
             return parseResponse(responseText, chunk);
           } catch (err) {
             console.error('LLM call failed', err);
-            return chunk;
+            return chunk; // Fallback to originals on failure
           }
         })
       );
@@ -100,14 +99,19 @@ async function callLLM(config: any, prompt: string): Promise<string> {
   return data.choices[0].message.content;
 }
 
-function createPrompt(chunk: string[], targetLang: string, readingNotes: string, opts?: { glossary?: string; rules?: string }) {
+function createPrompt(
+  chunk: string[],
+  targetLang: string,
+  readingNotes?: string,
+  opts?: { glossary?: string; rules?: string }
+) {
   let p = `Translate the following segments into ${targetLang}.
 Maintain the original meaning and tone.
 Return the translations in the exact same format: [index] translation
 One translation per line. Do not include any other text in your response.
 
 `;
-  if (readingNotes?.trim()) p += `CONTEXT (from document analysis):\n${readingNotes.trim()}\n\n`;
+  if (readingNotes) p += `Context / Reading Notes:\n${readingNotes}\n\n`;
   if (opts?.glossary) p += `Glossary:\n${opts.glossary}\n\n`;
   if (opts?.rules) p += `Rules:\n${opts.rules}\n\n`;
 

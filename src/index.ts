@@ -34,7 +34,7 @@ app.post('/translate', async (c) => {
   try {
     const { buffer } = await translateDocxBuffer(input, provider, targetLang, { glossary, rules });
     const bytes = new Uint8Array(buffer);
-    const b64 = btoa(Array.from(bytes, b => String.fromCharCode(b)).join(''));
+    const b64 = btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(''));
     return c.json({ docx: b64, filename: `document_${targetLang.toLowerCase()}.docx` });
   } catch (err) {
     console.error(err);
