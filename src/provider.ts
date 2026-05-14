@@ -52,7 +52,7 @@ function getProviderConfig(name: string, apiKey: string) {
         'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
-      model: 'claude-3-5-sonnet-20240620',
+      model: 'claude-3-5-sonnet-20241022',
     };
   } else {
     // Default to OpenRouter
@@ -64,7 +64,7 @@ function getProviderConfig(name: string, apiKey: string) {
         'HTTP-Referer': 'https://github.com/docshift/dich-web',
         'X-Title': 'dich-web',
       },
-      model: 'google/gemini-flash-1.5',
+      model: 'google/gemini-2.5-flash',
     };
   }
 }
