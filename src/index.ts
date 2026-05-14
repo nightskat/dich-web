@@ -4,7 +4,12 @@ import { translateDocxBuffer } from '@docshift/core';
 import { makeFetchProvider } from './provider';
 
 const app = new Hono();
-app.use('*', cors({ origin: '*', allowMethods: ['POST', 'OPTIONS'], allowHeaders: ['Content-Type'] }));
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}));
 
 app.post('/translate', async (c) => {
   let body: unknown;
