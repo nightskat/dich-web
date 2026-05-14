@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "build": "wrangler deploy --dry-run",
+    "test": "vitest",
+    "build": "tsc --noEmit",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
