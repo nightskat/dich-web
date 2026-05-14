@@ -46,7 +46,6 @@ app.post('/translate', async (c) => {
   if (docx.length > MAX_DOCX_LENGTH) return c.json({ error: 'docx exceeds maximum allowed size' }, 413);
   if (glossary && glossary.length > MAX_GLOSSARY_LENGTH) return c.json({ error: 'glossary exceeds maximum allowed size' }, 413);
   if (rules && rules.length > MAX_RULES_LENGTH) return c.json({ error: 'rules exceeds maximum allowed size' }, 413);
-
   // Sanitize targetLang to prevent path traversal/XSS in returned filename
   const sanitizedTargetLang = targetLang.replace(/[^a-zA-Z0-9-_]/g, '').substring(0, 50);
   if (!sanitizedTargetLang) return c.json({ error: 'invalid targetLang format' }, 400);
