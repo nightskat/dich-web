@@ -8,3 +8,8 @@ TypeScript types like `as Record<string, string>` do not exist at runtime. Never
 
 **Prevention:**
 Always validate runtime types of incoming JSON payloads using explicit type checks (`typeof val === 'string'`) or a validation library like Zod. Sanitize strings before injecting them into paths or filenames using strict allowlists (e.g., stripping non-alphanumeric characters).
+
+## 2026-05-15 - Critical Information Disclosure in Logs
+**Vulnerability:** Fetch error objects containing sensitive information (like Authorization headers or input buffers) were being logged in their entirety via `console.error` on LLM call failures.
+**Learning:** The default behavior of logging the entire error object from a failed fetch request can unintentionally leak sensitive data. In a Cloudflare Worker environment or any backend API, raw error objects can contain full request details, which then end up in system logs.
+**Prevention:** Always log specific error properties, such as `err.message`, rather than the full error object when handling network request failures, especially when requests contain API keys or sensitive user data.

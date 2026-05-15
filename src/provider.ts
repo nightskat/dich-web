@@ -41,7 +41,7 @@ One translation per line. Do not include any other text in your response.
             const responseText = await callLLM(config, prompt);
             return parseResponse(responseText, chunk);
           } catch (err) {
-            console.error('LLM call failed', err);
+            console.error('LLM call failed', err instanceof Error ? err.message : 'Unknown error');
             return chunk;
           }
         })
