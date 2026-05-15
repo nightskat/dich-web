@@ -4,6 +4,11 @@ import { secureHeaders } from 'hono/secure-headers';
 import { translateDocxBuffer } from '@docshift/core';
 import { makeFetchProvider } from './provider';
 
+// Size limits to prevent memory/CPU DoS
+const MAX_DOCX_LENGTH = 15 * 1024 * 1024; // 15MB base64 string
+const MAX_GLOSSARY_LENGTH = 100 * 1024;   // 100KB
+const MAX_RULES_LENGTH = 100 * 1024;      // 100KB
+
 const app = new Hono();
 app.use('*', secureHeaders());
 app.use('*', cors({
@@ -33,6 +38,10 @@ app.post('/translate', async (c) => {
   if (providerName !== undefined && typeof providerName !== 'string') return c.json({ error: 'invalid provider' }, 400);
   if (glossary !== undefined && typeof glossary !== 'string') return c.json({ error: 'invalid glossary' }, 400);
   if (rules !== undefined && typeof rules !== 'string') return c.json({ error: 'invalid rules' }, 400);
+
+  if (docx.length > MAX_DOCX_LENGTH) return c.json({ error: 'docx exceeds maximum allowed size' }, 413);
+  if (glossary && glossary.length > MAX_GLOSSARY_LENGTH) return c.json({ error: 'glossary exceeds maximum allowed size' }, 413);
+  if (rules && rules.length > MAX_RULES_LENGTH) return c.json({ error: 'rules exceeds maximum allowed size' }, 413);
 
   // Sanitize targetLang to prevent path traversal/XSS in returned filename
   const sanitizedTargetLang = targetLang.replace(/[^a-zA-Z0-9-_]/g, '').substring(0, 50);
