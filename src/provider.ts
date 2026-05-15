@@ -11,6 +11,20 @@ export function makeFetchProvider(providerName: string, apiKey: string): CorePro
     async translateWithBrief(segments, targetLang, readingNotes, _onProgress?, opts?) {
       if (!segments || segments.length === 0) return [];
 
+      // ⚡ Bolt: Cache LLM prompt prefix to reduce GC pressure and CPU overhead
+      // Pre-compute the static parts of the prompt, including the potentially large readingNotes
+      let prefix = `Translate the following segments into ${targetLang}.
+Maintain the original meaning and tone.
+Return the translations in the exact same format: [index] translation
+One translation per line. Do not include any other text in your response.
+
+`;
+      const trimmedNotes = readingNotes?.trim();
+      if (trimmedNotes) prefix += `CONTEXT (from document analysis):\n${trimmedNotes}\n\n`;
+      if (opts?.glossary) prefix += `Glossary:\n${opts.glossary}\n\n`;
+      if (opts?.rules) prefix += `Rules:\n${opts.rules}\n\n`;
+      prefix += `Segments to translate:\n`;
+
       const chunks: string[][] = [];
       for (let i = 0; i < segments.length; i += 20) {
         chunks.push(segments.slice(i, i + 20));
@@ -18,7 +32,11 @@ export function makeFetchProvider(providerName: string, apiKey: string): CorePro
 
       const translatedChunks = await Promise.all(
         chunks.map(async (chunk) => {
-          const prompt = createPrompt(chunk, targetLang, readingNotes, opts);
+          let prompt = prefix;
+          chunk.forEach((s, i) => {
+            prompt += `[${i + 1}] ${s}\n`;
+          });
+
           try {
             const responseText = await callLLM(config, prompt);
             return parseResponse(responseText, chunk);
@@ -98,24 +116,6 @@ async function callLLM(config: any, prompt: string): Promise<string> {
     return data.content[0].text;
   }
   return data.choices[0].message.content;
-}
-
-function createPrompt(chunk: string[], targetLang: string, readingNotes: string, opts?: { glossary?: string; rules?: string }) {
-  let p = `Translate the following segments into ${targetLang}.
-Maintain the original meaning and tone.
-Return the translations in the exact same format: [index] translation
-One translation per line. Do not include any other text in your response.
-
-`;
-  if (readingNotes?.trim()) p += `CONTEXT (from document analysis):\n${readingNotes.trim()}\n\n`;
-  if (opts?.glossary) p += `Glossary:\n${opts.glossary}\n\n`;
-  if (opts?.rules) p += `Rules:\n${opts.rules}\n\n`;
-
-  p += `Segments to translate:\n`;
-  chunk.forEach((s, i) => {
-    p += `[${i + 1}] ${s}\n`;
-  });
-  return p;
 }
 
 function parseResponse(responseText: string, originalChunk: string[]): string[] {
