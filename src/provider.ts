@@ -120,18 +120,19 @@ async function callLLM(config: any, prompt: string): Promise<string> {
 
 function parseResponse(responseText: string, originalChunk: string[]): string[] {
   const results = [...originalChunk];
-  const lines = responseText.split('\n');
-  const regex = /^\[(\d+)\]\s*(.*)$/;
 
-  lines.forEach((line) => {
-    const match = line.trim().match(regex);
-    if (match) {
-      const index = parseInt(match[1], 10) - 1;
-      if (index >= 0 && index < originalChunk.length) {
-        results[index] = match[2].trim();
-      }
+  // ⚡ Bolt: Optimize by avoiding .split('\n') and per-line string allocation.
+  // Using a single global regex execution reduces memory allocations and
+  // avoids unnecessary .trim() calls on every line.
+  const regex = /^\[(\d+)\]\s*(.*)$/gm;
+  let match;
+
+  while ((match = regex.exec(responseText)) !== null) {
+    const index = parseInt(match[1], 10) - 1;
+    if (index >= 0 && index < originalChunk.length) {
+      results[index] = match[2].trim();
     }
-  });
+  }
 
   return results;
 }
