@@ -1,5 +1,9 @@
 import { CoreProvider } from '@docshift/core';
 
+class ProviderError extends Error {
+  meta?: Record<string, unknown>;
+}
+
 export function makeFetchProvider(providerName: string, apiKey: string): CoreProvider {
   const config = getProviderConfig(providerName, apiKey);
 
@@ -41,7 +45,8 @@ One translation per line. Do not include any other text in your response.
             const responseText = await callLLM(config, prompt);
             return parseResponse(responseText, chunk);
           } catch (err) {
-            console.error('LLM call failed', err instanceof Error ? err.message : 'Unknown error');
+            const errorName = err instanceof Error ? err.name : 'UnknownError';
+            console.error('LLM call failed', errorName);
             return chunk;
           }
         })
@@ -108,7 +113,10 @@ async function callLLM(config: any, prompt: string): Promise<string> {
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`LLM provider returned ${res.status}: ${errorText}`);
+    const error = new ProviderError(`LLM provider returned ${res.status}`);
+    error.name = 'ProviderError';
+    error.meta = { status: res.status, errorText };
+    throw error;
   }
 
   const data: any = await res.json();
