@@ -13,3 +13,8 @@ Always validate runtime types of incoming JSON payloads using explicit type chec
 **Vulnerability:** Fetch error objects containing sensitive information (like Authorization headers or input buffers) were being logged in their entirety via `console.error` on LLM call failures.
 **Learning:** The default behavior of logging the entire error object from a failed fetch request can unintentionally leak sensitive data. In a Cloudflare Worker environment or any backend API, raw error objects can contain full request details, which then end up in system logs.
 **Prevention:** Always log specific error properties, such as `err.message`, rather than the full error object when handling network request failures, especially when requests contain API keys or sensitive user data.
+
+## 2024-05-18 - Missing Timeout on External API Calls
+**Vulnerability:** The `fetch` call to external LLM providers in `src/provider.ts` lacked a timeout mechanism.
+**Learning:** External API calls in serverless environments like Cloudflare Workers can hang indefinitely if the upstream service is unresponsive, leading to resource exhaustion (DoS) and potential excessive billing.
+**Prevention:** Always use `AbortSignal.timeout(ms)` for external `fetch` requests to ensure they fail predictably within a reasonable timeframe (e.g., 60 seconds for LLMs).

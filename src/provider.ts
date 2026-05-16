@@ -109,6 +109,7 @@ async function callLLM(config: any, prompt: string): Promise<string> {
     method: 'POST',
     headers: config.headers,
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(60000), // Security: timeout to prevent indefinite hangs
   });
 
   if (!res.ok) {
