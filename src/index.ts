@@ -52,12 +52,11 @@ app.post('/translate', async (c) => {
 
   let input: ArrayBuffer;
   try {
-    const bin = atob(docx);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      bytes[i] = bin.charCodeAt(i);
-    }
-    input = bytes.buffer;
+    // ⚡ Bolt: Use fetch with data URIs instead of atob() and manual loops
+    // This avoids large V8 heap allocations and significantly reduces CPU overhead
+    // by offloading Base64 decoding directly to the underlying runtime natively.
+    const req = await fetch(`data:application/octet-stream;base64,${docx}`);
+    input = await req.arrayBuffer();
   } catch {
     return c.json({ error: 'docx must be valid base64' }, 400);
   }
