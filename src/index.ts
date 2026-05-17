@@ -52,12 +52,12 @@ app.post('/translate', async (c) => {
 
   let input: ArrayBuffer;
   try {
-    const bin = atob(docx);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      bytes[i] = bin.charCodeAt(i);
-    }
-    input = bytes.buffer;
+    // ⚡ Bolt: Use fetch with data URI to decode Base64 natively.
+    // This is highly optimized in Cloudflare Workers and significantly reduces
+    // V8 heap allocations and CPU overhead compared to manual atob() + Uint8Array loops.
+    const res = await fetch(`data:application/octet-stream;base64,${docx}`);
+    if (!res.ok) throw new Error('Invalid base64');
+    input = await res.arrayBuffer();
   } catch {
     return c.json({ error: 'docx must be valid base64' }, 400);
   }
