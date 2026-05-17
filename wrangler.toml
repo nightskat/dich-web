@@ -1,3 +1,9 @@
 name = "dich-web"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
+
+[ai]
+binding = "AI"
+
+[vars]
+WAI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"

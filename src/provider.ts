@@ -11,6 +11,15 @@ interface ChatProvider {
   chat(messages: ChatMessage[], model: string, apiKey: string, signal: AbortSignal): Promise<string>;
 }
 
+interface WorkersAiInput {
+  messages: ChatMessage[];
+  temperature: number;
+}
+
+interface WorkersAiRunner {
+  run(model: string, input: WorkersAiInput): Promise<unknown>;
+}
+
 const endpoints: Record<Exclude<ProviderName, 'google'>, string> = {
   openrouter: 'https://openrouter.ai/api/v1/chat/completions',
   groq: 'https://api.groq.com/openai/v1/chat/completions',
@@ -75,6 +84,36 @@ class GoogleProvider implements ChatProvider {
   }
 }
 
+class CloudflareWorkersAiProvider {
+  constructor(private readonly ai: Ai) {}
+
+  async complete(prompt: string, model: string): Promise<string> {
+    console.log('workers-ai inference start', { model });
+    try {
+      const result = await (this.ai as WorkersAiRunner).run(model, {
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2,
+      });
+      return parseWorkersAiResponse(result);
+    } finally {
+      console.log('workers-ai inference end', { model });
+    }
+  }
+}
+
+function parseWorkersAiResponse(result: unknown): string {
+  if (!result || typeof result !== 'object' || !('response' in result)) {
+    throw new Error('Workers AI returned no response field');
+  }
+
+  const response = (result as { response?: unknown }).response;
+  if (typeof response !== 'string' || response.length === 0) {
+    throw new Error('Workers AI returned empty response');
+  }
+
+  return response;
+}
+
 export function isProviderName(value: string): value is ProviderName {
   return value === 'openrouter' || value === 'groq' || value === 'cerebras' || value === 'google';
 }
@@ -85,6 +124,16 @@ export function createCoreProvider(name: ProviderName, model: string, apiKey: st
   return {
     complete(prompt: string) {
       return provider.chat([{ role: 'user', content: prompt }], model, apiKey, signal);
+    },
+  };
+}
+
+export function cfWaiProvider(ai: Ai, model: string): CoreProvider {
+  const provider = new CloudflareWorkersAiProvider(ai);
+
+  return {
+    complete(prompt: string) {
+      return provider.complete(prompt, model);
     },
   };
 }
