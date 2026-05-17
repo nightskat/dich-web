@@ -10,8 +10,8 @@ export async function verifyTurnstile(
   clientIp: string,
 ): Promise<boolean> {
   if (secret.length === 0) {
-    console.warn('TURNSTILE_SECRET is empty; bypassing Turnstile verification for development.');
-    return true;
+    console.warn('TURNSTILE_SECRET is empty; demo endpoint disabled. Set via: wrangler secret put TURNSTILE_SECRET');
+    return false;
   }
   if (token.length === 0) {
     return false;
