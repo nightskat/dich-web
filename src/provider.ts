@@ -105,10 +105,12 @@ async function callLLM(config: any, prompt: string): Promise<string> {
         messages: [{ role: 'user', content: prompt }],
       };
 
+  // SECURITY: Add timeout to external API calls to prevent resource exhaustion and indefinite hangs
   const res = await fetch(config.url, {
     method: 'POST',
     headers: config.headers,
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!res.ok) {
