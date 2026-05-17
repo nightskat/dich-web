@@ -2,7 +2,9 @@
 
 Cloudflare Worker REST API for translating `.docx` files through `@docshift/core`.
 
-The API is stateless and BYOK: callers send their own LLM API key in the request body. No Worker secrets, KV, Durable Objects, or database are required for this scaffold.
+The primary `/translate` API is stateless and BYOK: callers send their own LLM
+API key in the request body. The demo-only `/translate-demo` route uses Workers
+AI plus KV and Turnstile guards.
 
 ## Install
 
@@ -61,3 +63,24 @@ Success response:
 ```
 
 Validation errors return `400`; translation failures return `500`.
+
+## Deployment requirements
+
+The `/translate-demo` route uses Cloudflare Workers AI and demo-only abuse guards.
+Before deploying it, create and configure these resources:
+
+```bash
+wrangler kv namespace create RATE_LIMIT
+```
+
+Paste the production and preview KV namespace IDs into `wrangler.toml`.
+
+```bash
+wrangler secret put TURNSTILE_SECRET
+```
+
+Create the Turnstile site and secret key in the Cloudflare dashboard, then set the
+secret with Wrangler. The config keeps `TURNSTILE_SECRET` empty for local dev.
+
+Tune `DEMO_DAILY_CAP` and `NEURON_DAILY_CAP` in `[vars]` if the default demo
+limits need to change.
