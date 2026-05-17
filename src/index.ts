@@ -5,11 +5,12 @@ import { bumpNeuronUsage, checkNeuronQuota } from './neuron-guard';
 import { cfWaiProvider, createCoreProvider, isProviderName } from './provider';
 import { checkRateLimit } from './rate-limit';
 import { verifyTurnstile } from './turnstile';
+import { MODEL_DEFAULT, MODEL_HEAVY, pickWaiModel } from './wai-router';
 
 const maxDocxBytes = 15 * 1024 * 1024;
 const timeoutMs = 55_000;
 const targetLangPattern = /^[A-Za-z0-9_-]{1,50}$/;
-const defaultWaiModel = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+const defaultWaiModel = MODEL_DEFAULT;
 
 interface Env {
   AI: Ai;
@@ -174,7 +175,11 @@ app.post('/translate-demo', async (c) => {
 
   try {
     const targetLang = normalizeCoreTargetLang(body.targetLang);
-    const provider = cfWaiProvider(c.env.AI, c.env.WAI_MODEL ?? defaultWaiModel);
+    const pinnedModel = c.env.WAI_MODEL; // env-pinned overrides router (escape hatch)
+    const provider = cfWaiProvider(
+      c.env.AI,
+      pinnedModel && pinnedModel.length > 0 ? pinnedModel : pickWaiModel,
+    );
     const result = await translateDocxBuffer(decoded, provider, targetLang);
 
     try {

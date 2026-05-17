@@ -11,7 +11,9 @@ id = "8f917283d45947d0befed58f3bdee2fe"
 preview_id = "4ff22cec82aa41d2b7ba19e8172ae147"
 
 [vars]
-WAI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+# WAI_MODEL: pin a single model (escape hatch). Empty = per-chunk router (src/wai-router.ts)
+# Default router: Gemma 3 12B (fast/cheap) → Llama 3.3 70B fp8-fast for numbers or long chunks
+WAI_MODEL = ""
 TURNSTILE_SECRET = ""  # Set via: wrangler secret put TURNSTILE_SECRET
 DEMO_DAILY_CAP = "2"
 NEURON_DAILY_CAP = "8000"

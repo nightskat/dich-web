@@ -84,11 +84,13 @@ class GoogleProvider implements ChatProvider {
   }
 }
 
+export type ModelPicker = (prompt: string) => string;
+
 class CloudflareWorkersAiProvider {
   constructor(private readonly ai: Ai) {}
 
   async complete(prompt: string, model: string): Promise<string> {
-    console.log('workers-ai inference start', { model });
+    console.log('workers-ai inference start', { model, promptLen: prompt.length });
     try {
       const result = await (this.ai as WorkersAiRunner).run(model, {
         messages: [{ role: 'user', content: prompt }],
@@ -128,12 +130,14 @@ export function createCoreProvider(name: ProviderName, model: string, apiKey: st
   };
 }
 
-export function cfWaiProvider(ai: Ai, model: string): CoreProvider {
+export function cfWaiProvider(ai: Ai, modelOrPicker: string | ModelPicker): CoreProvider {
   const provider = new CloudflareWorkersAiProvider(ai);
+  const resolve: ModelPicker =
+    typeof modelOrPicker === 'function' ? modelOrPicker : () => modelOrPicker;
 
   return {
     complete(prompt: string) {
-      return provider.complete(prompt, model);
+      return provider.complete(prompt, resolve(prompt));
     },
   };
 }
