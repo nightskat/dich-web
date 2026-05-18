@@ -52,12 +52,9 @@ app.post('/translate', async (c) => {
 
   let input: ArrayBuffer;
   try {
-    const bin = atob(docx);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      bytes[i] = bin.charCodeAt(i);
-    }
-    input = bytes.buffer;
+    // Security: Use fetch with data URI for optimized Base64 decoding to prevent CPU exhaustion on large payloads
+    const res = await fetch(`data:application/octet-stream;base64,${docx}`);
+    input = await res.arrayBuffer();
   } catch {
     return c.json({ error: 'docx must be valid base64' }, 400);
   }
