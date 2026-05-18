@@ -66,7 +66,19 @@ app.post('/translate', async (c) => {
   try {
     const { buffer } = await translateDocxBuffer(input, provider, targetLang, { glossary, rules });
     const bytes = new Uint8Array(buffer);
-    const b64 = btoa(Array.from(bytes, b => String.fromCharCode(b)).join(''));
+
+    // ⚡ Bolt: Optimize Base64 encoding by using a chunked fromCharCode approach.
+    // Array.from().join('') creates massive intermediate arrays and strings, causing severe
+    // GC pressure and CPU overhead for large buffers (up to 15MB).
+    // The chunked approach avoids the maximum call stack size exceeded error while remaining
+    // significantly faster and more memory-efficient.
+    const CHUNK_SIZE = 8192;
+    let binaryString = '';
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      binaryString += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE) as unknown as number[]);
+    }
+    const b64 = btoa(binaryString);
+
     return c.json({ docx: b64, filename: `document_${sanitizedTargetLang.toLowerCase()}.docx` });
   } catch (err) {
     // Avoid logging full error object which might leak API keys or input buffer
