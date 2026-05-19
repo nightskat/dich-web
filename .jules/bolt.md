@@ -1,7 +1,3 @@
-## 2024-05-14 - Redundant string trimming on repeated prompt construction
-**Learning:** In Cloudflare Workers with limited memory and strict latency, performing `.trim()` and string concatenation on large context strings (like `readingNotes`, which can be MBs of text) inside a loop processing hundreds of segments leads to massive unnecessary GC pressure and CPU overhead.
-**Action:** When mapping over chunks to generate LLM prompts, always pre-compute and cache the static prefix (including any massive context strings) outside the loop before appending chunk-specific dynamic segments.
-
-## 2024-05-15 - Regex overhead in parsing LLM responses
-**Learning:** Using `String.prototype.split('\n')` combined with per-line mapping and `.trim()` creates excessive array allocations and garbage collection pressure when processing LLM outputs line-by-line.
-**Action:** To optimize processing multi-line responses, use a single global regular expression execution (`regex.exec` with the `/gm` flag) inside a `while` loop. This completely avoids intermediate array allocations from `.split()` and per-line string copies, significantly reducing latency and GC cycles.
+## 2024-12-11 - Base64 encoding massive performance bottleneck
+**Learning:** `Array.from(bytes, b => String.fromCharCode(b)).join('')` is a massive performance and memory footprint trap for encoding large byte arrays to Base64 in JavaScript/TypeScript. It causes extensive garbage collection overhead and potential Out-Of-Memory (OOM) exceptions. `String.fromCharCode.apply` reduces this time vastly, but requires a chunked approach due to the max call stack size limitation.
+**Action:** When handling payload up to 15MB that needs base64 encoding, avoid `Array.from(...).join('')`. Instead, use a chunked loop with `String.fromCharCode.apply` (e.g. `CHUNK_SIZE = 8192`) and concatenate the strings.
