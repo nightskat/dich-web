@@ -105,10 +105,12 @@ async function callLLM(config: any, prompt: string): Promise<string> {
         messages: [{ role: 'user', content: prompt }],
       };
 
+  // 🛡️ Sentinel: Add 60s timeout to prevent indefinite hangs and resource exhaustion DoS risks
   const res = await fetch(config.url, {
     method: 'POST',
     headers: config.headers,
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!res.ok) {
