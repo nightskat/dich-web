@@ -114,10 +114,9 @@ async function callLLM(config: any, prompt: string): Promise<string> {
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
     const error = new ProviderError(`LLM provider returned ${res.status}`);
     error.name = 'ProviderError';
-    error.meta = { status: res.status, errorText };
+    error.meta = { status: res.status };
     throw error;
   }
 
